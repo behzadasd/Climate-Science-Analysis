@@ -7,8 +7,6 @@
 ####     github.com/behzadasd       ####
 ########################################
 
-import sys
-sys.path.append('/data1/home/basadieh/behzadcodes/Github/behzadlibrary')
 from Behzadlib import func_latlon_regrid, func_regrid, func_oceanlandmask, func_gridcell_area, func_plotmap_contourf, func_plot_laggedmaps
 ########################################
 import numpy as np
@@ -46,6 +44,7 @@ GCM = 'GFDL-ESM2G'
 lat_t='lat'
 lon_t='lon'
 time_t='time'
+
 ##################################################################################################
 ###  Calculating Wind Curls using wind stress in latitudinal and longitudinal directions  ########
 ##################################################################################################
@@ -116,7 +115,7 @@ fig, m = func_plotmap_contourf(Plot_Var, Lon_regrid_2D, Lat_regrid_2D, Plot_rang
 im2=m.contour(Lon_regrid_2D, Lat_regrid_2D,Plot_Var2, 20, latlon=True, colors='k')
 plt.clabel(im2, fontsize=8, inline=1)
 plt.show()
-fig.savefig(dir_pwd+'/'+'Wind_Curl_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
+fig.savefig(dir_pwd+'/'+'Fig_Wind_Curl_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
 
 ###############################################################################
 Lat_regrid_1D_4, Lon_regrid_1D_4, Lat_bound_regrid_4, Lon_bound_regrid_4 = func_latlon_regrid(45, 90, lat_min_regrid, lat_max_regrid, lon_min_regrid, lon_max_regrid)
@@ -135,7 +134,7 @@ im2=m.quiver(Lon_regrid_2D_4, Lat_regrid_2D_4, Tau_X_4, Tau_Y_4, latlon=True, pi
 plt.show()
 im3=m.contour(Lon_regrid_2D[25:50,:], Lat_regrid_2D[25:50,:],Plot_Var_f[25:50,:], levels = [0], latlon=True, colors='darkgreen')
 plt.clabel(im3, fontsize=8, inline=1)
-fig.savefig(dir_pwd+'/'+'Wind_Curl_f_WQuiver_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
+fig.savefig(dir_pwd+'/'+'Fig_Wind_Curl_f_WQuiver_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
 
 
 ###############################################################
@@ -190,7 +189,7 @@ fig.colorbar(im, cax=cbar_ax)
 plt.show()
 mng = plt.get_current_fig_manager()
 mng.window.showMaximized() # Maximizes the plot window to save figures in full
-fig.savefig(dir_pwd+'/'+'SeaIce_Arctic_monthly_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
+fig.savefig(dir_pwd+'/'+'Fig_SeaIce_Arctic_monthly_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
 #plt.close()
 
 
