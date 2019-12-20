@@ -7,7 +7,7 @@
 ####     github.com/behzadasd       ####
 ########################################
 
-from Behzadlib import func_latlon_regrid, func_regrid, func_oceanlandmask, func_gridcell_area, func_plotmap_contourf, func_plot_laggedmaps
+from Behzadlib import func_latlon_regrid, func_regrid, func_oceanlandmask, func_gridcell_area, func_plotmap_contourf
 ########################################
 import numpy as np
 import xarray as xr
