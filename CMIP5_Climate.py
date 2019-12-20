@@ -1,6 +1,6 @@
-#############################################
-####   CMIP5 - Sea Surface Temperature   ####
-#############################################
+########################################
+####    CMIP5 - Climate Analysis    ####
+########################################
 ####     Behzad Asadieh, Ph.D.      ####
 ####  University of Pennsylvania    ####
 ####    basadieh@sas.upenn.edu      ####
