@@ -1,8 +1,12 @@
 # Climate-Science-Analysis
-Various climate science analysis and plots: Winds, Sea Ice, Empirical Orthogonal Functions, etc
+
+Various climate science analysis and plots:
+* Calculating and plotting Empirical Orthogonal Functions (EOFs) of sea surface temperature over Pacific Ocean, where the EOF indices are Butter-worth filtered to smooth out high frequency noises
+* Calculating Curl of the Wind using wind stress in X and Y directions
+* Plotting Arctic Sea Ice Concentration average over each month of the year
+
 
 Main code: CMIP5_Climate.py
-
 
 * The climate model data are stored at UPenn's local server
 
@@ -12,6 +16,12 @@ Functions code: Behzadlib.py
 
 
 Final plotting products:
+
+* Fig_EOF_SST_SpatialPattern_GFDL-ESM2G.png = Spatial Pattern of EOFs of sea surface temperature over Pacific Ocean
+
+* Fig_EOF_SST_Indices_GFDL-ESM2G.png = Indices of EOFs of sea surface temperature over Pacific Ocean
+
+
 * Fig_Wind_Curl_GFDL-ESM2G.png = Curl of the wind, calculated as
 
 Wind_Curl = ( D_Tau_Y / D_X ) - ( D_Tau_X / D_Y ) # D_X = (Lon_1 - Lon_2) * COS(Lat)
