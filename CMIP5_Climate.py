@@ -7,7 +7,7 @@
 ####     github.com/behzadasd       ####
 ########################################
 
-from Behzadlib import func_latlon_regrid, func_regrid, func_oceanlandmask, func_gridcell_area, func_plotmap_contourf
+from Behzadlib import func_latlon_regrid, func_regrid, func_oceanlandmask, func_oceanindex, func_gridcell_area, func_plotmap_contourf, func_EOF
 ########################################
 import numpy as np
 import xarray as xr
@@ -21,7 +21,7 @@ from mpl_toolkits.basemap import Basemap, cm, maskoceans
 from scipy.interpolate import griddata
 import math
 import copy
-########################################
+###############################################################################
 dir_pwd = os.getcwd() # Gets the current directory (and in which the code is placed)
 
 ### Regrdridding calculations ###
@@ -37,13 +37,125 @@ Lon_regrid_2D, Lat_regrid_2D = np.meshgrid(Lon_regrid_1D, Lat_regrid_1D)
 # Land/Ocean mask - The function is saved in Behzadlib code in this directory - imported at the begenning
 Ocean_Land_mask = func_oceanlandmask(Lat_regrid_2D, Lon_regrid_2D) # 1= ocean, 0= land
 
-####################################################################
+###############################################################################
 GCM_Names = ['GFDL-ESM2M', 'GFDL-ESM2G', 'IPSL-CM5A-MR', 'IPSL-CM5A-LR', 'MIROC-ESM', 'MIROC-ESM-CHEM', 'CESM1-BGC', 'CMCC-CESM', 'CanESM2', 'GISS-E2-H-CC', 'GISS-E2-R-CC', 'MPI-ESM-MR', 'MPI-ESM-LR', 'NorESM1-ME']
 GCM = 'GFDL-ESM2G'
 
 lat_t='lat'
 lon_t='lon'
 time_t='time'
+
+###############################################################################
+###  Empirical Orthogonal Functions (EOFs) of Sea Surface Temperature  ########
+###############################################################################
+dir_data_in1 = ('/data2/scratch/cabre/CMIP5/CMIP5_models/ocean_physics/') # Directory to raed raw data from
+dir_data_in2=(dir_data_in1+ GCM + '/historical/mo/')
+
+year_start=1901
+year_end=2000
+
+Var_name='thetao' # The variable name to be read from .nc files
+dset = xr.open_mfdataset(dir_data_in2+Var_name+'*12.nc')
+Data_all = dset[Var_name].sel(lev=0,method='nearest') # data at lev=0   
+
+Lat_orig = dset[lat_t]
+Lat_orig = Lat_orig.values
+Lon_orig = dset[lon_t]
+Lon_orig = Lon_orig.values     
+
+Data_monthly = Data_all[ (Data_all.time.dt.year >= year_start ) & (Data_all.time.dt.year <= year_end)]
+Data_monthly = Data_monthly.values # Converts to a Numpy array
+Data_monthly [ Data_monthly > 1e19 ] = np.nan
+Data_rannual = Data_monthly.reshape( np.int(Data_monthly.shape[0]/12) ,12,Data_monthly.shape[1],Data_monthly.shape[2])
+Data_rannual = np.nanmean(Data_rannual,axis=1)
+
+# Regriding data into 1degree by 1degree fields -  The regridding function is saved in Behzadlib code in this directory - imported at the begenning
+# The SST data is regridded to coarser 4x4 degree fields to reduce the calculation time and memory needed
+Lat_regrid_1D_2, Lon_regrid_1D_2, Lat_bound_regrid_2, Lon_bound_regrid_2 = func_latlon_regrid(90,180, lat_min_regrid, lat_max_regrid, lon_min_regrid, lon_max_regrid)
+Lon_regrid_2D_2, Lat_regrid_2D_2 = np.meshgrid(Lon_regrid_1D_2, Lat_regrid_1D_2)
+SST_annual = func_regrid(Data_rannual, Lat_orig, Lon_orig, Lat_regrid_2D_2, Lon_regrid_2D_2)
+
+# Keeping only Pacific Ocean grid-cells
+# Ocean Index mask - The function is saved in Behzadlib code in this directory - imported at the begenning
+Ocean_Index = func_oceanindex (Lat_regrid_2D_2, Lon_regrid_2D_2) # [0=land] [2=Pacific] [3=Indian Ocean] [6=Atlantic] [10=Arctic] [8=Baffin Bay (west of Greenland)] [9=Norwegian Sea (east of Greenland)] [11=Hudson Bay (Canada)] 
+for ii in range(SST_annual.shape[0]):
+    SST_annual[ii,:,:][ Ocean_Index != 2 ] = np.nan
+
+# Empirical Orthogonal Functions (EOFs) - The function is saved in Behzadlib code in this directory - imported at the begenning
+EOF_spatial_pattern, EOF_time_series, EOF_variance_prcnt = func_EOF (SST_annual, Lat_regrid_2D_2)
+
+## ButterWorth Filtering of high frequency (less than 3 yr time-period) signals in the EOF time series
+from scipy import stats, signal
+CutOff_T = 3 # Cut-off period 
+n_order = 4 # Order of filtering
+fs = 1  # Sampling frequency, equal to 1 year in our case
+fc = 1/CutOff_T  # Cut-off frequency of the filter
+ww = fc / (fs / 2) # Normalize the frequency
+bb, aa = signal.butter(n_order, ww, 'low')
+
+EOF_time_series_BWfilt = copy.deepcopy(EOF_time_series)
+for ii in range(EOF_time_series_BWfilt.shape[0]):
+    EOF_time_series_BWfilt[ii,:] = signal.filtfilt(bb, aa, EOF_time_series_BWfilt[ii,:])
+
+### Ploting the Spatial Patterns and Indices
+Plot_Var = EOF_spatial_pattern
+Plot_prcnt=EOF_variance_prcnt
+P_cmap=plt.cm.seismic; P_proj='cyl'; P_lon0=210.; P_latN=90.; P_latS=-90.; P_range=np.linspace(-0.08,0.08,41); P_Lon=Lon_regrid_2D_2; P_Lat=Lat_regrid_2D_2;
+n_r=2 ; n_c=2 ; n_t=4
+fig=plt.figure()
+for M_i in range(n_t):
+    ax = fig.add_subplot(n_r,n_c,M_i+1)     
+    Var_plot_ii=Plot_Var[M_i,:,:]    
+    
+    m = Basemap( projection=P_proj, lon_0=P_lon0, llcrnrlon=P_lon0-180, llcrnrlat=P_latS, urcrnrlon=P_lon0+180, urcrnrlat=P_latN)    
+    if M_i == (n_c*(n_r-1)): # Adds longitude ranges only to the last subplots that appear at the bottom of plot
+        m.drawparallels(np.arange(P_latS, P_latN+0.001, 30.),labels=[True,False,False,False], linewidth=0.01, color='k', fontsize=16) # labels = [left,right,top,bottom] # Latitutes
+        m.drawmeridians(np.arange(0,360,90.),labels=[False,False,False,True], linewidth=0.01, color='k', fontsize=16) # labels = [left,right,top,bottom] # Longitudes    
+    elif M_i==0 or M_i==n_c or M_i==n_c*2 or M_i==n_c*3 or M_i==n_c*4 or M_i==n_c*5 or M_i==n_c*6 or M_i==n_c*7 or M_i==n_c*8:
+        m.drawparallels(np.arange(P_latS, P_latN+0.001, 30.),labels=[True,False,False,False], linewidth=0.01, color='k', fontsize=16) # labels = [left,right,top,bottom] # Latitutes
+    elif M_i >= n_t-n_c and M_i != (n_c*(n_r-1)): # Adds longitude ranges only to the last subplots that appear at the bottom of plot
+        m.drawmeridians(np.arange(0,360,90.),labels=[False,False,False,True], linewidth=0.01, color='k', fontsize=16) # labels = [left,right,top,bottom] # Longitudes
+    else:
+        m.drawparallels(np.arange(P_latS, P_latN+0.001, 30.),labels=[False,False,False,False], linewidth=0.01, color='k', fontsize=16) # labels = [left,right,top,bottom] # Latitutes
+        m.drawmeridians(np.arange(0,360,90.),labels=[False,False,False,False], linewidth=0.01, color='k', fontsize=16) # labels = [left,right,top,bottom] # Longitudes
+
+    m.fillcontinents(color='0')
+    m.drawcoastlines(linewidth=1.0, linestyle='solid', antialiased=1, ax=None, zorder=None)
+    m.fillcontinents(color='0.95')
+    im=m.contourf(P_Lon, P_Lat, Var_plot_ii, P_range, latlon=True, cmap=P_cmap, extend='both')
+    plt.title('EOF #'+str(M_i+1)+'  ,  '+str(round(Plot_prcnt[M_i], 2))+' % of the variance', fontsize=14)
+        
+plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, hspace=0.05, wspace=0.1) # the amount of height/width reserved for space between subplots
+cbar_ax = fig.add_axes([0.93, 0.1, 0.015, 0.8]) # [right,bottom,width,height] 
+fig.colorbar(im, cax=cbar_ax)
+plt.suptitle('Empirical Orthogonal Functions (EOFs) of Pacific Ocean sea surface temperature'+'\n'+'Spatial Pattern maps - '+str(year_start)+'-'+str(year_end)+' - '+str(GCM), fontsize=20)    
+plt.show()
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized() # Maximizes the plot window to save figures in full   
+fig.savefig(dir_pwd+'/'+'Fig_EOF_SST_SpatialPattern_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
+
+
+Plot_Var = EOF_time_series_BWfilt
+Plot_prcnt=EOF_variance_prcnt
+fig, ax = plt.subplots(nrows=2, ncols=2)
+for ii in range(4):
+    EOF_time_series_plot_norm=(Plot_Var[ii,:]-np.nanmean(Plot_Var[ii,:]))/np.std(Plot_Var[ii,:])    
+    #EOF_time_series_plot_norm_rm=runningMeanFast(EOF_time_series_plot_norm, 10)
+    EOF_time_series_plot_norm_rm=EOF_time_series_plot_norm
+    plt.subplot(2, 2, ii+1)
+    n_l=EOF_time_series_plot_norm.shape[0]
+    years=np.linspace(0, n_l, n_l)
+    plt.plot(years,EOF_time_series_plot_norm_rm, 'k') 
+    y2=np.zeros(len(EOF_time_series_plot_norm_rm))
+    plt.fill_between(years, EOF_time_series_plot_norm_rm, y2, where=EOF_time_series_plot_norm_rm >= y2, color = 'r', interpolate=True)
+    plt.fill_between(years, EOF_time_series_plot_norm_rm, y2, where=EOF_time_series_plot_norm_rm <= y2, color = 'b', interpolate=True)
+    plt.axhline(linewidth=1, color='k')
+    plt.title('EOF # '+str(ii+1)+'  ,  '+str(round(Plot_prcnt[ii], 2))+' % of the variance', fontsize=18)
+    plt.xticks(fontsize = 18); plt.yticks(fontsize = 18)
+plt.suptitle('Empirical Orthogonal Functions (EOFs) of Pacific Ocean sea surface temperature'+'\n'+'Time Series (Butterworth filtered, Normalized) - '+str(year_start)+'-'+str(year_end)+' - '+str(GCM), fontsize=20)    
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized() # Maximizes the plot window to save figures in full
+fig.savefig(dir_pwd+'/'+'Fig_EOF_SST_Indices_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
 
 ##################################################################################################
 ###  Calculating Wind Curls using wind stress in latitudinal and longitudinal directions  ########
@@ -67,6 +179,7 @@ Data_monthly = Data_all[ (Data_all.time.dt.year >= year_start ) & (Data_all.time
 Data_monthly = Data_monthly.values # Converts to a Numpy array
 Data_rannual = Data_monthly.reshape( np.int(Data_monthly.shape[0]/12) ,12,Data_monthly.shape[1],Data_monthly.shape[2])
 Data_rannual = np.nanmean(Data_rannual,axis=1)
+# Regriding data into 1degree by 1degree fields -  The regridding function is saved in Behzadlib code in this directory - imported at the begenning
 Tau_X = func_regrid(Data_rannual, Lat_orig, Lon_orig, Lat_regrid_2D, Lon_regrid_2D)
 
 Var_name='tauv' # The variable name to be read from .nc files
@@ -159,6 +272,7 @@ Data_monthly = Data_all[ (Data_all.time.dt.year >= year_start ) & (Data_all.time
 Data_monthly = Data_monthly.values # Converts to a Numpy array
 Data_monthly_ave = Data_monthly.reshape( np.int(Data_monthly.shape[0]/12) ,12,Data_monthly.shape[1],Data_monthly.shape[2])
 Data_monthly_ave = np.nanmean(Data_monthly_ave,axis=0)
+# Regriding data into 1degree by 1degree fields -  The regridding function is saved in Behzadlib code in this directory - imported at the begenning
 SIC_monthly = func_regrid(Data_monthly_ave, Lat_orig, Lon_orig, Lat_regrid_2D, Lon_regrid_2D)
 SIC_monthly [SIC_monthly==0] = np.nan # To mask the ice-free ocean in the map
 
@@ -191,31 +305,6 @@ mng = plt.get_current_fig_manager()
 mng.window.showMaximized() # Maximizes the plot window to save figures in full
 fig.savefig(dir_pwd+'/'+'Fig_SeaIce_Arctic_monthly_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
 #plt.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
