@@ -2,6 +2,7 @@
 
 Various climate science analysis and plots:
 * Calculating and plotting Empirical Orthogonal Functions (EOFs) of sea surface temperature over Pacific Ocean, where the EOF indices are Butter-worth filtered to smooth out high frequency noises
+* Calculating North Atlantic Oscillation (NAO) defined as the 1st EOF of Sea-Level Air Presure over North Atlantic
 * Calculating Curl of the Wind using wind stress in X and Y directions
 * Plotting Arctic Sea Ice Concentration average over each month of the year
 
@@ -21,6 +22,9 @@ Final plotting products:
 
 * Fig_EOF_SST_Indices_GFDL-ESM2G.png = Indices of EOFs of sea surface temperature over Pacific Ocean
 
+* Fig_NAO_SpatialPattern_GFDL-ESM2G.png = Spatial Pattern of North Atlantic Oscillation (NAO)
+
+* Fig_NAO_Indices_GFDL-ESM2G.png = Indices of North Atlantic Oscillation (NAO)
 
 * Fig_Wind_Curl_GFDL-ESM2G.png = Curl of the wind, calculated as
 
