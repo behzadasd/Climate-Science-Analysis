@@ -157,6 +157,85 @@ mng = plt.get_current_fig_manager()
 mng.window.showMaximized() # Maximizes the plot window to save figures in full
 fig.savefig(dir_pwd+'/'+'Fig_EOF_SST_Indices_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
 
+###############################################################################################
+#%%### North Atlantic Oscillation (NAO) calculat as the 1st EOF of Sea-Level Air Presure ######
+###############################################################################################
+dir_data_in1 = ('/data2/scratch/cabre/CMIP5/CMIP5_models/atmosphere_physics/') # Directory to raed raw data from
+dir_data_in2=(dir_data_in1+ GCM + '/historical/mo/')
+
+year_start=1901
+year_end=2000
+
+Var_name='psl' # The variable name to be read from .nc files
+dset = xr.open_mfdataset(dir_data_in2+Var_name+'*12.nc')
+Data_all = dset[Var_name] # data at lev=0   
+
+Lat_orig = dset[lat_t]
+Lon_orig = dset[lon_t]  
+
+#Data_NAO = Data_all[ (Data_all.time.dt.year >= year_start ) & (Data_all.time.dt.year <= year_end)]
+#Data_NAO = Data_NAO.isel(lat=slice(49, 90), lon=slice(112, 144))  # Latitude range [10,85]  # Longitude range [280,360]
+#Lat_NAO = Lat_orig.isel(lat=slice(49, 90))
+#Lat_NAO=Lat_NAO.values
+#Lon_NAO = Lon_orig.isel(lon=slice(112, 144))
+#Lon_NAO=Lon_NAO.values
+Data_NAO = Data_all[ (Data_all.time.dt.year >= year_start ) & (Data_all.time.dt.year <= year_end)]
+Data_NAO = Data_NAO.sel(lat=np.arange(10,85,2), lon=np.arange(280,360,2), method='nearest')
+Lat_NAO = Lat_orig.sel(lat=np.arange(10,85,2), method='nearest') # Latitude range [10,85]
+Lat_NAO=Lat_NAO.values
+Lon_NAO = Lon_orig.sel(lon=np.arange(280,360,2), method='nearest') # Longitude range [280,360]
+Lon_NAO=Lon_NAO.values
+
+Data_NAO = Data_NAO.values # Converts to a Numpy array
+Data_NAO [ Data_NAO > 1e19 ] = np.nan
+Data_NAO_rannual = Data_NAO.reshape( np.int(Data_NAO.shape[0]/12) ,12,Data_NAO.shape[1],Data_NAO.shape[2]) # Calculating annual average values, from monthly data
+Data_NAO_rannual = np.nanmean(Data_NAO_rannual,axis=1)
+
+Lon_NAO_2D, Lat_NAO_2D = np.meshgrid(Lon_NAO, Lat_NAO)
+# Empirical Orthogonal Functions (EOFs) - The function is saved in Behzadlib code in this directory - imported at the begenning
+EOF_spatial_pattern, EOF_time_series, EOF_variance_prcnt = func_EOF (Data_NAO_rannual, Lat_NAO_2D)
+# NAO calculat as the 1st EOF of Sea-Level Air Presure
+NAO_spatial_pattern = EOF_spatial_pattern[0,:,:]
+NAO_index = EOF_time_series[0,:]
+
+
+Plot_Var = NAO_spatial_pattern
+cmap_limit=np.nanmax(np.abs( np.nanpercentile(Plot_Var, 99)))
+Plot_range=np.linspace(-cmap_limit,cmap_limit,27)
+
+fig=plt.figure()
+P_lon0=360.
+m = Basemap( projection='cyl', lon_0=P_lon0, llcrnrlon=P_lon0-120, llcrnrlat=-10., urcrnrlon=P_lon0+60, urcrnrlat=80.)
+m.drawparallels(np.arange(-20., 80.+0.001, 20.),labels=[True,False,False,False], linewidth=0.01, color='k', fontsize=20) # labels = [left,right,top,bottom] # Latitutes
+m.drawmeridians(np.arange(-180,+180,30.),labels=[False,False,False,True], linewidth=0.01, color='k', fontsize=20) # labels = [left,right,top,bottom] # Longitudes        
+m.drawcoastlines(linewidth=1.0, linestyle='solid', color='k', antialiased=1, ax=None, zorder=None)
+im=m.contourf(Lon_NAO_2D, Lat_NAO_2D, Plot_Var,Plot_range,latlon=True, cmap=plt.cm.seismic, extend='both')
+cbar = m.colorbar(im,"right", size="3%", pad="2%")
+cbar.ax.tick_params(labelsize=20) 
+plt.show()
+plt.title('North Atlantic Oscillation (NAO) calculat as the 1st EOF of Sea-Level Air Presure'+'\n'+'Spatial Pattern map - '+str(year_start)+'-'+str(year_end)+' - '+str(GCM), fontsize=18)
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized() # Maximizes the plot window to save figures in full
+fig.savefig(dir_pwd+'/'+'Fig_NAO_SpatialPattern_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
+
+
+Plot_Var = (NAO_index - np.nanmean(NAO_index))/np.std(NAO_index) # NAO index normalized   
+
+fig=plt.figure()
+n_l=Plot_Var.shape[0]
+years=np.linspace(year_start, year_start+n_l-1, n_l)
+plt.plot(years,Plot_Var, 'k') 
+y2=np.zeros(len(Plot_Var))
+plt.fill_between(years, Plot_Var, y2, where=Plot_Var >= y2, color = 'r', interpolate=True)
+plt.fill_between(years, Plot_Var, y2, where=Plot_Var <= y2, color = 'b', interpolate=True)
+plt.axhline(linewidth=1, color='k')
+plt.xticks(fontsize = 18); plt.yticks(fontsize = 18)
+plt.title('North Atlantic Oscillation (NAO) calculat as the 1st EOF of Sea-Level Air Presure'+'\n'+'Time Series - '+str(year_start)+'-'+str(year_end)+' - '+str(GCM), fontsize=20)    
+mng = plt.get_current_fig_manager()
+mng.window.showMaximized() # Maximizes the plot window to save figures in full
+fig.savefig(dir_pwd+'/'+'Fig_NAO_Indices_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
+
+
 ##################################################################################################
 ###  Calculating Wind Curls using wind stress in latitudinal and longitudinal directions  ########
 ##################################################################################################
