@@ -157,9 +157,9 @@ mng = plt.get_current_fig_manager()
 mng.window.showMaximized() # Maximizes the plot window to save figures in full
 fig.savefig(dir_pwd+'/'+'Fig_EOF_SST_Indices_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
 
-###############################################################################################
-#%%### North Atlantic Oscillation (NAO) calculat as the 1st EOF of Sea-Level Air Presure ######
-###############################################################################################
+#################################################################################################
+#%%### North Atlantic Oscillation (NAO) calculated as the 1st EOF of Sea-Level Air Presure ######
+#################################################################################################
 dir_data_in1 = ('/data2/scratch/cabre/CMIP5/CMIP5_models/atmosphere_physics/') # Directory to raed raw data from
 dir_data_in2=(dir_data_in1+ GCM + '/historical/mo/')
 
@@ -168,7 +168,7 @@ year_end=2000
 
 Var_name='psl' # The variable name to be read from .nc files
 dset = xr.open_mfdataset(dir_data_in2+Var_name+'*12.nc')
-Data_all = dset[Var_name] # data at lev=0   
+Data_all = dset[Var_name] 
 
 Lat_orig = dset[lat_t]
 Lon_orig = dset[lon_t]  
@@ -194,7 +194,7 @@ Data_NAO_rannual = np.nanmean(Data_NAO_rannual,axis=1)
 Lon_NAO_2D, Lat_NAO_2D = np.meshgrid(Lon_NAO, Lat_NAO)
 # Empirical Orthogonal Functions (EOFs) - The function is saved in Behzadlib code in this directory - imported at the begenning
 EOF_spatial_pattern, EOF_time_series, EOF_variance_prcnt = func_EOF (Data_NAO_rannual, Lat_NAO_2D)
-# NAO calculat as the 1st EOF of Sea-Level Air Presure
+# NAO calculated as the 1st EOF of Sea-Level Air Presure
 NAO_spatial_pattern = EOF_spatial_pattern[0,:,:]
 NAO_index = EOF_time_series[0,:]
 
@@ -213,7 +213,7 @@ im=m.contourf(Lon_NAO_2D, Lat_NAO_2D, Plot_Var,Plot_range,latlon=True, cmap=plt.
 cbar = m.colorbar(im,"right", size="3%", pad="2%")
 cbar.ax.tick_params(labelsize=20) 
 plt.show()
-plt.title('North Atlantic Oscillation (NAO) calculat as the 1st EOF of Sea-Level Air Presure'+'\n'+'Spatial Pattern map - '+str(year_start)+'-'+str(year_end)+' - '+str(GCM), fontsize=18)
+plt.title('North Atlantic Oscillation (NAO) calculated as the 1st EOF of Sea-Level Air Presure'+'\n'+'Spatial Pattern map - '+str(year_start)+'-'+str(year_end)+' - '+str(GCM), fontsize=18)
 mng = plt.get_current_fig_manager()
 mng.window.showMaximized() # Maximizes the plot window to save figures in full
 fig.savefig(dir_pwd+'/'+'Fig_NAO_SpatialPattern_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
@@ -230,7 +230,7 @@ plt.fill_between(years, Plot_Var, y2, where=Plot_Var >= y2, color = 'r', interpo
 plt.fill_between(years, Plot_Var, y2, where=Plot_Var <= y2, color = 'b', interpolate=True)
 plt.axhline(linewidth=1, color='k')
 plt.xticks(fontsize = 18); plt.yticks(fontsize = 18)
-plt.title('North Atlantic Oscillation (NAO) calculat as the 1st EOF of Sea-Level Air Presure'+'\n'+'Time Series - '+str(year_start)+'-'+str(year_end)+' - '+str(GCM), fontsize=20)    
+plt.title('North Atlantic Oscillation (NAO) calculated as the 1st EOF of Sea-Level Air Presure'+'\n'+'Time Series - '+str(year_start)+'-'+str(year_end)+' - '+str(GCM), fontsize=20)    
 mng = plt.get_current_fig_manager()
 mng.window.showMaximized() # Maximizes the plot window to save figures in full
 fig.savefig(dir_pwd+'/'+'Fig_NAO_Indices_'+str(GCM)+'.png', format='png', dpi=300, transparent=True, bbox_inches='tight')
