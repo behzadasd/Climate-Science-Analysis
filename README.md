@@ -35,3 +35,12 @@ Wind_Curl = ( D_Tau_Y / D_X ) - ( D_Tau_X / D_Y ) # D_X = (Lon_1 - Lon_2) * COS(
 * Fig_Wind_Curl_f_WQuiver_GFDL-ESM2G.png = Ekman transport, equal to wind curl divided by coriolis parameter. The quivers are the wind direction - Wind_Crul / f , f = coriolis parameter = 2Wsin(LAT) , W = 7.292E-5 rad/s
 
 * Fig_SeaIce_Arctic_monthly_GFDL-ESM2G.png = Arctic Sea Ice concentration average for each month - average of 1991-2000
+
+
+
+![Alt text](https://raw.githubusercontent.com/behzadasd/Climate-Science-Analysis/master/Fig_SeaIce_Arctic_monthly_GFDL-ESM2G.png)
+
+![Alt text](https://raw.githubusercontent.com/behzadasd/Climate-Science-Analysis/master/Fig_NAO_SpatialPattern_GFDL-ESM2G.png)
+
+![Alt text](https://raw.githubusercontent.com/behzadasd/Climate-Science-Analysis/master/Fig_Wind_Curl_f_WQuiver_GFDL-ESM2G.png)
+
