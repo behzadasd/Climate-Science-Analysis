@@ -25,7 +25,7 @@ import copy
 dir_pwd = os.getcwd() # Gets the current directory (and in which the code is placed)
 
 ### Regrdridding calculations ###
-# creating new coordinate grid, same which was used in interpolation in data processing code
+# creating new coordinate grid, same as what was used in interpolation in data processing code
 lat_n_regrid, lon_n_regrid = 180, 360 # Number of Lat and Lon elements in the regridded data
 lon_min_regrid, lon_max_regrid = 0, 360 # Min and Max value of Lon in the regridded data
 lat_min_regrid, lat_max_regrid = -90, 90 # Min and Max value of Lat in the regridded data
